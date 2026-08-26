@@ -113,8 +113,20 @@ def clean_location(X):
 # Load trained pipeline
 # --------------------------------------------------
 
-model = joblib.load("house_price_model.pkl")
+# model = joblib.load("house_price_model.pkl")
 
+from xgboost import XGBRegressor
+
+# Load fitted preprocessor
+preprocessor = joblib.load("preprocessor.pkl")
+
+# Load fitted sklearn models
+knn_model = joblib.load("knn_model.pkl")
+dt_model = joblib.load("dt_model.pkl")
+
+# Load fitted XGBoost model
+xgb_model = XGBRegressor()
+xgb_model.load_model("xgb_model.json")
 
 # --------------------------------------------------
 # Page configuration
@@ -223,8 +235,17 @@ if st.button("Predict Price"):
         "bhk": [bhk]
     })
 
-    prediction = model.predict(input_data)[0]
-
+    # prediction = model.predict(input_data)[0]
+    # Transform raw user input
+    X = preprocessor.transform(input_data)
+    
+    # Individual model predictions
+    pred_knn = knn_model.predict(X)[0]
+    pred_dt = dt_model.predict(X)[0]
+    pred_xgb = xgb_model.predict(X)[0]
+    
+    # Weighted voting (same as training)
+    prediction = (2*pred_knn + pred_dt + 3*pred_xgb) / 6
     st.success(
         f"Estimated Price: ₹{prediction:.2f} Lakhs"
     )
