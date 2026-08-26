@@ -2,6 +2,111 @@ import streamlit as st
 import pandas as pd
 import joblib
 
+import re
+
+def clean_total_sqft(X):
+
+    X = X.copy()
+    s = X["total_sqft"].astype(str).str.strip()
+
+    # Start with NaN
+    result = pd.Series(np.nan, index=s.index, dtype=float)
+
+
+    # --------------------------------------------------
+    # 1. Numeric values
+    # --------------------------------------------------
+
+    numeric_mask = s.str.fullmatch(
+        r"\d+(\.\d+)?",
+        na=False
+    )
+
+    result.loc[numeric_mask] = (
+        s.loc[numeric_mask].astype(float)
+    )
+
+
+    # --------------------------------------------------
+    # 2. Range values → midpoint
+    # --------------------------------------------------
+
+    range_mask = s.str.fullmatch(
+        r"\d+(\.\d+)?\s*-\s*\d+(\.\d+)?",
+        na=False
+    )
+
+    ranges = s.loc[range_mask].str.split("-", expand=True)
+
+    result.loc[range_mask] = (
+        ranges[0].astype(float) +
+        ranges[1].astype(float)
+    ) / 2
+
+
+    # --------------------------------------------------
+    # 3. Unit-based values → convert to sqft
+    # --------------------------------------------------
+
+    conversion_factors = {
+        "Sq. Meter": 10.7639,
+        "Sq. Yards": 9,
+        "Acres": 43560,
+        "Cents": 435.6,
+        "Guntha": 1089,
+        "Grounds": 2400,
+        "Perch": 272.25
+    }
+
+    for unit, factor in conversion_factors.items():
+
+        mask = s.str.fullmatch(
+            rf"\d+(\.\d+)?\s*{re.escape(unit)}",
+            na=False
+        )
+
+        values = (
+            s.loc[mask]
+            .str.extract(r"(\d+(?:\.\d+)?)")[0]
+            .astype(float)
+        )
+
+        result.loc[mask] = values * factor
+
+
+    # Return DataFrame
+    return result.to_frame(name="total_sqft")
+
+
+def clean_availability(X):
+    X = X.copy()
+
+    X["availability"] = np.where(
+        X["availability"].isin(
+            ["Ready To Move", "Immediate Possession"]
+        ),
+        "Ready / Immediate Possession",
+        "Date-based Possession"
+    )
+
+    return X
+
+def clean_location(X):
+    X = X.copy()
+
+    # Standardize location names
+    X["location"] = (
+        X["location"]
+        .str.strip()
+        .str.lower()
+    )
+
+    # Fill missing values with mode
+    mode = X["location"].mode()[0]
+    X["location"] = X["location"].fillna(mode)
+
+    return X
+
 
 # --------------------------------------------------
 # Load trained pipeline
