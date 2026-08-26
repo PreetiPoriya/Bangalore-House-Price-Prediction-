@@ -3,16 +3,16 @@ import pandas as pd
 import joblib
 
 
-# -------------------------
-# Load trained model
-# -------------------------
+# --------------------------------------------------
+# Load trained pipeline
+# --------------------------------------------------
 
 model = joblib.load("house_price_model.pkl")
 
 
-# -------------------------
+# --------------------------------------------------
 # Page configuration
-# -------------------------
+# --------------------------------------------------
 
 st.set_page_config(
     page_title="Bangalore House Price Predictor",
@@ -21,9 +21,9 @@ st.set_page_config(
 )
 
 
-# -------------------------
+# --------------------------------------------------
 # Title
-# -------------------------
+# --------------------------------------------------
 
 st.title("🏠 Bangalore House Price Predictor")
 
@@ -32,9 +32,9 @@ st.write(
 )
 
 
-# -------------------------
-# User inputs
-# -------------------------
+# --------------------------------------------------
+# Input fields
+# --------------------------------------------------
 
 area_type = st.selectbox(
     "Area Type",
@@ -47,9 +47,15 @@ area_type = st.selectbox(
 )
 
 
-availability = st.text_input(
+availability = st.selectbox(
     "Availability",
-    placeholder="e.g. Ready To Move"
+    [
+        "Ready To Move",
+        "Immediate Possession",
+        "15-Aug-2026",
+        "18-Dec-2026",
+        "30-Jun-2027"
+    ]
 )
 
 
@@ -65,36 +71,39 @@ total_sqft = st.text_input(
 )
 
 
-bhk = st.number_input(
-    "BHK",
-    min_value=1,
-    max_value=20,
-    value=2,
-    step=1
-)
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    bhk = st.number_input(
+        "BHK",
+        min_value=1,
+        max_value=20,
+        value=2,
+        step=1
+    )
+
+with col2:
+    bath = st.number_input(
+        "Bathrooms",
+        min_value=1,
+        max_value=20,
+        value=2,
+        step=1
+    )
+
+with col3:
+    balcony = st.number_input(
+        "Balconies",
+        min_value=0,
+        max_value=10,
+        value=1,
+        step=1
+    )
 
 
-bath = st.number_input(
-    "Bathrooms",
-    min_value=1,
-    max_value=20,
-    value=2,
-    step=1
-)
-
-
-balcony = st.number_input(
-    "Balconies",
-    min_value=0,
-    max_value=10,
-    value=1,
-    step=1
-)
-
-
-# -------------------------
+# --------------------------------------------------
 # Prediction
-# -------------------------
+# --------------------------------------------------
 
 if st.button("Predict Price"):
 
